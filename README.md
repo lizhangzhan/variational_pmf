@@ -1,4 +1,5 @@
 Variational implementation of Probabilistic Matrix Factorization
+
 ===============
 
 This class implements the scalable variational probabilistic matrix factorization algorithm presented in Kim and Choi (2013).
@@ -17,3 +18,8 @@ Initialisation:
 - u_ki ~ N(0,1)
 - v_kj ~ N(0,1)
 - alpha_k, beta_k, tau are all initialized using the derived updates
+
+Our class constructor requires three arguments:
+- X, as a 2D NumPy array
+- M, as a 2D NumPy array
+- K, integer
