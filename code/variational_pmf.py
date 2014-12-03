@@ -1,4 +1,4 @@
-import numpy, random
+import numpy, random, math
 from scipy.stats import invgamma
 
 
@@ -15,12 +15,25 @@ class VariationalPMF:
 		self.alpha = numpy.empty([K])
 		self.beta = numpy.empty([K])
 		self.tau = 0
+		self.RMSE = 0
+		self.F_q = 0
 		return
 
 
 	def run(self,iterations):
 		# Initialize a (K,I) matrix U, S_U, (K,J) matrix V, S_V, (I,J) matrix R
-		self.initialize()
+		#self.initialize()
+		self.U = numpy.array([
+			[ 2.20293498, -0.12139367,  0.67800237,  2.27199757],
+			[-1.85369011, -0.32077793, -0.11329014,  0.40277643]
+		])
+		self.S_U = [[1,1,1,1],[2,2,2,2]]
+		self.V = numpy.array([
+			[ 1.23343862, -3.47311768, -4.43899942,  1.18449626, -2.20931011],
+			[-0.07824337,  3.10808451, -1.37756161,  0.66224362,  0.04654989]
+		])
+		self.S_V = [[3,3,3,3,3],[2,2,2,2,2]]
+		self.R = self.X - numpy.dot(self.U.transpose(),self.V)
 
 		# self.omega_U will store an array of tuples Mi, containing the indices
 		# j for which Mij is 1. Similarly for self.omega_V, Mj, indices i; and
@@ -28,13 +41,22 @@ class VariationalPMF:
 		self.compute_omega()
 
 		# Initialize the hyperparameters alpha_k, beta_k, tau
-		self.update_hyperparameters()
+		#self.update_hyperparameters()
+		self.alpha = [1,2]
+		self.beta = [3,2]
+		self.tau = 2
 
 		# Then repeatedly: update U, update V, update hyperparams
 		for i in range(0,iterations):
-			self.update_U()
-			self.update_V()
+			#self.update_U()
+			#self.update_V()
 			self.update_hyperparameters()
+			
+			self.calc_statistics()
+			print self.F_q
+
+		# Calculate the RMSE and variational lower bound F(q)
+		self.calc_statistics()
 
 		return
 
@@ -59,13 +81,8 @@ class VariationalPMF:
 				self.V[k][j] = random.normalvariate(0,1)
 				self.S_V[k][j] = IG.rvs()
 
-		self.R = numpy.empty([self.I,self.J])
-		for i in range(0,self.I):
-			for j in range(0,self.J):
-				if self.M[i][j] == 1:
-					self.R[i][j] = self.X[i][j] - numpy.dot(self.U[:,i].transpose(),self.V[:,j])
-				else: 
-					self.R[i][j] = 0
+		self.R = self.X - numpy.dot(self.U.transpose(),self.V)
+
 
 		#print "U: ", self.U
 		#print "S_U: ", self.S_U
@@ -162,41 +179,81 @@ class VariationalPMF:
 		return
 
 
+	def calc_statistics(self):
+		# See Kim and Choi for these definitions
+		self.RMSE = sum([sum([self.R[i][j]**2 for j in range(0,self.J)])for i in range(0,self.I)]) / (self.I * self.J)
+		F = 0.0
+		for i in range(0,self.I):
+			for j in range(0,self.J):
+				E_ij = self.R[i][j]**2 + sum([
+					self.U[k][i]**2 * self.S_V[k][j] + self.V[k][j]**2 * self.S_U[k][i] + self.S_U[k][i]*self.S_V[k][j]
+					for k in range(0,self.K)])
+				F_ij = -(self.tau/2.0)*E_ij - (1.0)/(2.0)*math.log(2*math.pi*self.tau) # natural log
+				F += F_ij
+		for i in range(0,self.I):
+			for k in range(0,self.K):
+				F_U_ki = -1.0/(2.0*self.alpha[k]) * (self.U[k][i]**2 + self.S_U[k][i]) + math.log(self.S_U[k][i]*self.alpha[k])/2.0 + 1.0/2.0
+				F += F_U_ki
+		for j in range(0,self.J):
+			for k in range(0,self.K):
+				F_V_kj = -1.0/(2.0*self.beta[k]) * (self.V[k][j]**2 + self.S_V[k][j]) + math.log(self.S_V[k][j]*self.beta[k])/2.0 + 1.0/2.0
+				F += F_V_kj
+		self.F_q = F
+		return
+
+
 if __name__ == "__main__":
 	# Original matrices:
-	# U = [[1,2,3,4][1,2,3,4]]
-	# V = [[5,6,7,8,9],[5,6,7,8,9]]
-	#X = numpy.array([
-	#	[1,	2,	3,	4,	5	],
-	#	[99,3,	4,	5,	99	],
-	#	[3,	4,	99,	6,	7	],
-	#	[4,	5,	6,	7,	8	]
+	alpha = [1,2]
+	beta = [3,2]
+	tau = 2
+	#original_U = numpy.array([
+	#	[random.normalvariate(0,alpha[0]) for i in range(0,4)],
+	#	[random.normalvariate(0,alpha[1]) for i in range(0,4)]
 	#])
-
-	#X = numpy.array([
-	#	[0.01,0.012,0.014,0.016,0.018],
-	#	[0.02,0.024,0.028,0.032,0.036],
-	#	[0.03,0.036,0.042,0.048,0.054],
-	#	[0.04,0.048,0.056,0.064,0.072]
+	#original_V = numpy.array([
+	#	[random.normalvariate(0,beta[0]) for i in range(0,5)],
+	#	[random.normalvariate(0,beta[1]) for i in range(0,5)]
 	#])
-	X = numpy.array([
-		[10,12,14,16,18],
-		[20,24,28,32,36],
-		[30,36,42,48,54],
-		[40,48,56,64,72]
+	#X = numpy.array([
+	#	[
+	#		random.normalvariate(element,tau)
+	#		for element in row
+	#	]
+	#	for row in numpy.dot(original_U.transpose(),original_V)
+	#])
+	original_U = numpy.array([
+		[ 2.20293498, -0.12139367,  0.67800237,  2.27199757],
+		[-1.85369011, -0.32077793, -0.11329014,  0.40277643]
 	])
+	original_V = numpy.array([
+		[ 1.23343862, -3.47311768, -4.43899942,  1.18449626, -2.20931011],
+		[-0.07824337,  3.10808451, -1.37756161,  0.66224362,  0.04654989]
+	])
+	X = numpy.array([
+		[  2.32431992, -11.7913782,   -7.74228389,   2.59442851,  -5.51584412],
+ 		[  0.85785318,  -3.06949111,   0.72351582,   0.43589775,   0.13710034],
+ 		[  1.51937854,   0.01188825,  -4.88318157,  -1.06202971,  -2.360093  ],
+ 		[  1.28276217,  -5.64957929,  -9.51851513,   3.5672679,   -6.33356818]
+	])
+
 	M = numpy.array([
 		[1,	1,	1,	1,	1	],
-		[0, 1,	1,	1,	0	],
-		[1,	1,	0,	1,	1	],
+		[1, 1,	1,	1,	1	],
+		[1,	1,	1,	1,	1	],
 		[1,	1,	1,	1,	1	]
 	])
 	K = 2
 	
 	PMF = VariationalPMF(X,M,K)
-	PMF.run(10)
+	PMF.run(100)
+
+	X_predicted = numpy.dot(PMF.U.transpose(),PMF.V)
 
 	print
+	print "Original U: ", original_U
+	print "Original V: ", original_V
+	print "X: ", X
 	print "tau, alpha, beta:", PMF.tau, PMF.alpha, PMF.beta
 	print "U: ", PMF.U
 	print "V: ", PMF.V
@@ -204,4 +261,4 @@ if __name__ == "__main__":
 	print "S_V: ", PMF.S_V
 	print "R: ", PMF.R
 
-	print "X:",numpy.dot(PMF.U.transpose(),PMF.V)
+	print "X_predicted:",X_predicted
