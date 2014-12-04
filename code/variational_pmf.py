@@ -52,14 +52,9 @@ class VariationalPMF:
 		# Then repeatedly: update U, update V, update hyperparams
 		for i in range(0,iterations):
 			self.update_U()
-			self.calc_statistics()
-			print "#",self.F_q
-
 			self.update_V()
-			self.calc_statistics()
-			print self.F_q
-
 			self.update_hyperparameters()
+
 			self.calc_statistics()
 			print self.F_q
 
