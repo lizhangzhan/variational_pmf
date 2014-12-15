@@ -1,4 +1,4 @@
-import variational_pmf.code.variational_pmf as variational_pmf
+from variational_pmf.code.variational_pmf import VariationalPMF
 import numpy
 
 def test_variational_pmf():
@@ -21,7 +21,7 @@ def test_variational_pmf():
 					   [(3-(0.7*1.4)-(0.9*1.6)),(4-(0.7*1.5)-(0.9*1.7))]])
 
 
-	PMF = variational_pmf.VariationalPMF(X,M,K)
+	PMF = VariationalPMF(X,M,K)
 	PMF.run(0)
 
 

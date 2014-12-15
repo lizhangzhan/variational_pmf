@@ -3,7 +3,6 @@ from scipy.stats import invgamma
 
 
 class VariationalPMF:
-
 	def __init__(self,X,M,K):
 		# K is the order of the matrix decomposition, X is a num.py matrix.
 		# M shows which entries are known (M_ij = 1 if known, 0 otherwise).
@@ -17,23 +16,13 @@ class VariationalPMF:
 		self.tau = 0
 		self.RMSE = 0
 		self.F_q = 0
+
 		return
 
 
-	def run(self,iterations):
+	def run(self,iterations,updates=10):
 		# Initialize a (K,I) matrix U, S_U, (K,J) matrix V, S_V, (I,J) matrix R
 		self.initialize()
-		#self.U = numpy.array([
-		#	[-0.44287367,  1.0638293,  -1.79817223,  0.08845199],
-	 	#	[-0.3400308,  -0.19817153,  1.20456161,  0.07377642]
-		#])
-		#self.S_U = [[1,1,1,1],[1,1,1,1]]
-		#self.V = numpy.array([
-		#	[ 1.09437084,  0.62430629,  0.59796201, -0.20876766,  1.39772961],
-		#	[-0.64444032, -0.90888236,  0.18876245, -0.4161538,  -0.48067803]
-		#])
-		#self.S_V = [[1,1,1,1,1],[1,1,1,1,1]]
-		#self.R = self.X - numpy.dot(self.U.transpose(),self.V)
 
 		# self.omega_U will store an array of tuples Mi, containing the indices
 		# j for which Mij is 1. Similarly for self.omega_V, Mj, indices i; and
@@ -42,21 +31,19 @@ class VariationalPMF:
 
 		# Initialize the hyperparameters alpha_k, beta_k, tau
 		self.update_hyperparameters()
-		#self.alpha = [1,1]
-		#self.beta = [1,1]
-		#self.tau = 1
 
 		self.calc_statistics()
 		print self.F_q
 
 		# Then repeatedly: update U, update V, update hyperparams
-		for i in range(0,iterations):
+		for i in range(1,iterations+1):
 			self.update_U()
 			self.update_V()
 			self.update_hyperparameters()
 
-			self.calc_statistics()
-			print self.F_q
+			if (updates > 0 and i % updates == 0):
+				self.calc_statistics()
+				print "Iteration %s, F_q: %s" % (i,self.F_q)
 
 		# Calculate the RMSE and variational lower bound F(q)
 		self.calc_statistics()
@@ -86,13 +73,6 @@ class VariationalPMF:
 
 		self.R = self.X - numpy.dot(self.U.transpose(),self.V)
 
-
-		#print "U: ", self.U
-		#print "S_U: ", self.S_U
-		#print "V: ", self.V
-		#print "S_V: ", self.S_V
-		#print "R: ", self.R
-
 		return
 
 
@@ -112,20 +92,10 @@ class VariationalPMF:
 		for j in range(0,self.J):
 			self.omega_J[j] = [i for (i,m_ij) in enumerate(self.M[:,j]) if m_ij == 1]
 
-		#print "Omega: ", self.omega
-		#print "Omega_I: ", self.omega_I
-		#print "Omega_J: ", self.omega_J
-
 		return
 
 
 	def update_U(self):
-		#print "U before: ",self.U
-		#print "V: ",self.V
-		#print "S_U before: ", self.S_U
-		#print "alpha: ",self.alpha
-		#print "tau: ",self.tau
-
 		for i in range(0,self.I):
 			for k in range(0,self.K):
 				old_U_ki = self.U[k][i]
@@ -133,16 +103,7 @@ class VariationalPMF:
 				self.U[k][i] = self.S_U[k][i] * ((1.0/self.tau) * sum([(self.R[i][j]+self.U[k][i]*self.V[k][j])*self.V[k][j] for j in self.omega_I[i]]))
 				for j in self.omega_I[i]:
 					self.R[i][j] = self.R[i][j] - (self.U[k][i]-old_U_ki) * self.V[k][j]
-					
-		#print
-		#print "U: ", self.U
-		#print "U after: ",self.U
-		#print "S_U after: ", self.S_U
-
-		#print "R: ", self.R
-		#MSE = sum([sum([(self.X[i][j] - self.R[i][j])**2 for j in range(0,self.J)]) for i in range(0,self.I)])
-		#print "MSE: ",MSE
-
+			
 		return
 
 
@@ -154,45 +115,21 @@ class VariationalPMF:
 				self.V[k][j] = self.S_V[k][j] * ((1.0/self.tau) * sum([(self.R[i][j]+self.V[k][j]*self.U[k][i])*self.U[k][i] for i in self.omega_J[j]]))
 				for i in self.omega_J[j]:
 					self.R[i][j] = self.R[i][j] - (self.V[k][j]-old_V_kj) * self.U[k][i]
-		
-		#print
-		#print "V: ", self.V
-		#print "S_V: ", self.S_V
-
-		#print "R: ", self.R
-
+	
 		return
 
 
 	def update_hyperparameters(self):
-		#print "alpha before: ",self.alpha
-		#print "beta before: ",self.beta
-		#print "S_U: ",self.S_U
-		#print "S_V: ",self.S_V
-
 		for k in range(0,self.K):
 			self.alpha[k] = sum([(self.U[k][i])**2 + self.S_U[k][i] for i in range(0,self.I)]) / float(self.I)
 			self.beta[k] = sum([(self.V[k][j])**2 + self.S_V[k][j] for j in range(0,self.J)]) / float(self.J)
-
-		#print "alpha after: ",self.alpha
-		#print "beta before: ",self.beta
-
-		#print "Alpha: ", self.alpha
-		#print "Beta: ", self.beta
 
 		# Compute E_ij, then sum to give E
 		E = 0.0
 		for (i,j) in self.omega:
 			E_ij = self.R[i][j]**2 + sum([((self.U[k][i]**2)*self.S_V[k][j] + (self.V[k][j]**2)*self.S_U[k][i] + self.S_U[k][i]*self.S_V[k][j]) for k in range(0,self.K)])
 			E += E_ij
-			#print self.R[i][j],self.U[k][i],self.V[k][j]
-			#print "E_ij: ",i,j,E_ij
-
-			#print "E:", i, j, E_ij
-
 		self.tau = E / float(len(self.omega))
-
-		#print "Tau: ", self.tau
 
 		return
 
@@ -218,63 +155,3 @@ class VariationalPMF:
 				F += F_V_kj
 		self.F_q = F
 		return
-
-
-if __name__ == "__main__":
-	# Original matrices:
-	I = 10
-	J = 20
-	K = 5
-	alpha = numpy.ones(I)
-	beta = numpy.ones(J)
-	tau = 1
-	
-	original_U = numpy.array([
-		[random.normalvariate(0,math.sqrt(alpha[k])) for i in range(0,I)]
-		for k in range(0,K)
-	])
-	original_V = numpy.array([
-		[random.normalvariate(0,math.sqrt(beta[k])) for j in range(0,J)]
-		for k in range(0,K)
-	])
-	X = numpy.array([
-		[
-			random.normalvariate(element,math.sqrt(tau))
-			for element in row
-		]
-		for row in numpy.dot(original_U.transpose(),original_V)
-	])
-	#original_U = numpy.array([
-	#	[-0.44287367,  1.0638293,  -1.79817223,  0.08845199],
- 	#	[-0.3400308,  -0.19817153,  1.20456161,  0.07377642]
-	#])
-	#original_V = numpy.array([
-	#	[ 1.09437084,  0.62430629,  0.59796201, -0.20876766,  1.39772961],
-	#	[-0.64444032, -0.90888236,  0.18876245, -0.4161538,  -0.48067803]
-	#])
-	#X = numpy.array([
-	#	[-0.53926979,  0.45974257,  0.71284042,  0.47260807,  1.03824097],
- 	#	[ 2.48033453,  0.54513335, -0.77696111,  0.22562728,  0.79144723],
- 	#	[-2.73801611,  0.27148848, -0.23274955,  0.44526388, -4.67589525],
- 	#	[-0.14498833,  0.52374697,  0.95323515, -0.06717858,  2.16204996]
-	#])
-
-	M = numpy.ones([I,J])
-	
-	PMF = VariationalPMF(X,M,K)
-	PMF.run(50)
-
-	X_predicted = numpy.dot(PMF.U.transpose(),PMF.V)
-
-	print
-	print "Original U: ", original_U
-	print "Original V: ", original_V
-	print "X: ", X
-	print "tau, alpha, beta:", PMF.tau, PMF.alpha, PMF.beta
-	print "U: ", PMF.U
-	print "V: ", PMF.V
-	print "S_U: ", PMF.S_U
-	print "S_V: ", PMF.S_V
-	print "R: ", PMF.R
-
-	print "X_predicted:",X_predicted
