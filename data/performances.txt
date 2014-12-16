@@ -1,0 +1,12 @@
+Variational - all
+-445599.532051
+Variational - average
+-445599.532051
+Variational - best
+-445599.532051
+RMSE - all
+8.27342830763
+RMSE - average
+8.27342830763
+RMSE - best
+8.27342830763

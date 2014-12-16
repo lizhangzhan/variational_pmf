@@ -38,7 +38,7 @@ class VariationalPMF:
 		self.update_hyperparameters()
 
 		self.calc_statistics()
-		print "Iteration 0, F_q: %s" % (self.F_q)
+		print "Iteration 0, RMSE: %s, F_q: %s" % (self.RMSE,self.F_q)
 
 		# Then repeatedly: update U, update V, update hyperparams
 		for i in range(1,iterations+1):
@@ -48,10 +48,13 @@ class VariationalPMF:
 
 			if (updates > 0 and i % updates == 0):
 				self.calc_statistics()
-				print "Iteration %s, F_q: %s" % (i,self.F_q)
+				print "Iteration %s, RMSE: %s, F_q: %s" % (i,self.RMSE,self.F_q)
 
 		# Calculate the RMSE and variational lower bound F(q)
 		self.calc_statistics()
+
+		# Compute the predicttion matrix X = U^T * V
+		self.predicted_X = numpy.dot(self.U.transpose(),self.V)
 
 		return
 

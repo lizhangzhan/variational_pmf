@@ -19,12 +19,13 @@ def recover(M,source,target,iterations):
 
 	predicted_U = PMF.U
 	predicted_V = PMF.V
-	predicted_X = numpy.dot(predicted_U.transpose(),predicted_V)
+	predicted_X = PMF.predicted_X
 
 	# Write predicted_X, U, V to output file
 	store_X_U_V(target,predicted_X,predicted_U,predicted_V)
 
 	return
+
 
 if __name__ == "__main__":
 	recover(numpy.ones([100,80]),"generated.txt","recovered.txt",20)

@@ -3,7 +3,9 @@ import matplotlib.pyplot as plt
 
 import generate_example, recover_example
 sys.path.append("../../.")
+from variational_pmf.code.load_store_matrices import load_X_U_V, store_X_U_V
 from variational_pmf.code.variational_pmf import VariationalPMF
+from variational_pmf.code.run_different_k import recover_predictions, generate_M
 
 
 """
@@ -18,11 +20,7 @@ if __name__ == "__main__":
 	J = 80
 	K = 2
 
-	M = numpy.ones([I,J])
-	# Randomly set a tenth of the values to 0 (unknown)
-	values = random.sample(range(0,I*J),(I*J)/10)
-	for v in values:
-		M[v / I][v % J] = 0
+	M = generate_M(I,J,0.1)
 
 	generated = "generated.txt"
 	recovered = "recovered.txt"
@@ -30,17 +28,11 @@ if __name__ == "__main__":
 	generate_example.generate_X(I,J,K,generated)
 	recover_example.recover(M,generated,recovered,20)
 
-	(_,_,_,original_X,original_U,original_V) = recover_example.read_X_U_V(generated)
-	(_,_,_,predicted_X,predicted_U,predicted_V) = recover_example.read_X_U_V(recovered)
+	(_,_,_,original_X,original_U,original_V) = load_X_U_V(generated)
+	(_,_,_,predicted_X,predicted_U,predicted_V) = load_X_U_V(recovered)
 
-	unknown_values_indices = []
-	actual_vs_predicted = []
-	for i in range(0,I):
-		for j in range(0,J):
-			if M[i][j] == 0:
-				unknown_values_indices.append((i,j))
-				actual_vs_predicted.append((original_X[i][j],predicted_X[i][j]))
-	
+	actual_vs_predicted = recover_predictions(M,original_X,predicted_X)
+
 	(x,y) = zip(*actual_vs_predicted)
 	plt.figure()
 	plt.xlabel('actual')
