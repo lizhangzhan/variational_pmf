@@ -1,8 +1,13 @@
 import numpy, random, math
 from scipy.stats import invgamma
 
+"""
+This file contains the implementation of the variational approach to the
+Probabilistic Matrix Factorization algorithm.
+"""
 
 class VariationalPMF:
+
 	def __init__(self,X,M,K):
 		# K is the order of the matrix decomposition, X is a num.py matrix.
 		# M shows which entries are known (M_ij = 1 if known, 0 otherwise).
@@ -33,7 +38,7 @@ class VariationalPMF:
 		self.update_hyperparameters()
 
 		self.calc_statistics()
-		print self.F_q
+		print "Iteration 0, F_q: %s" % (self.F_q)
 
 		# Then repeatedly: update U, update V, update hyperparams
 		for i in range(1,iterations+1):
@@ -53,7 +58,7 @@ class VariationalPMF:
 
 	def initialize(self):
 		# InvGamma RV with beta=1, alpha=1
-		IG = invgamma(a=1)
+		IG = invgamma(1)
 
 		self.U = numpy.empty([self.K,self.I])
 		self.S_U = numpy.empty([self.K,self.I])

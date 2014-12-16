@@ -1,3 +1,7 @@
+import sys
+sys.path.append("../../.")
+from variational_pmf.code.load_store_matrices import store_X_U_V
+
 import numpy, random, math
 
 """
@@ -13,7 +17,7 @@ V<\n>
 similar to X
 """
 
-def generate(I,J,K,target):
+def generate_X(I,J,K,target):
 	alpha = numpy.ones(I)
 	beta = numpy.ones(J)
 	tau = 1
@@ -35,19 +39,9 @@ def generate(I,J,K,target):
 	])
 
 	# Write to file
-	f = open(target,'w')
-	f.write("%s\t%s\t%s\n" % (I,J,K))
-	write(f,"X",X)
-	write(f,"U",U)
-	write(f,"V",V)
+	store_X_U_V(target,X,U,V)
 
 	return
-
-
-def write(fout,name,matrix):
-	fout.write("%s\n" % name)
-	text = "\n".join(["\t".join([str(element) for element in row]) for row in matrix])+"\n"
-	fout.write(text)
 
 
 if __name__ == "__main__":
@@ -55,4 +49,4 @@ if __name__ == "__main__":
 	J = 80
 	K = 2
 	target = "generated.txt"
-	generate(I,J,K,target)
+	generate_X(I,J,K,target)

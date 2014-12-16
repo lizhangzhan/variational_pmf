@@ -27,7 +27,7 @@ if __name__ == "__main__":
 	generated = "generated.txt"
 	recovered = "recovered.txt"
 
-	generate_example.generate(I,J,K,generated)
+	generate_example.generate_X(I,J,K,generated)
 	recover_example.recover(M,generated,recovered,20)
 
 	(_,_,_,original_X,original_U,original_V) = recover_example.read_X_U_V(generated)

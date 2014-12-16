@@ -1,7 +1,8 @@
 import sys
 sys.path.append("../../.")
 from variational_pmf.code.variational_pmf import VariationalPMF
-from generate_example import write
+from variational_pmf.code.load_store_matrices import load_X_U_V, store_X_U_V
+
 import numpy
 
 """
@@ -11,7 +12,7 @@ predicted X=U^T*V in <target>.
 """
 
 def recover(M,source,target,iterations):
-	(I,J,K,X,U,V) = read_X_U_V(source)
+	(I,J,K,X,U,V) = load_X_U_V(source)
 
 	PMF = VariationalPMF(X,M,K)
 	PMF.run(iterations,updates=10)
@@ -21,34 +22,9 @@ def recover(M,source,target,iterations):
 	predicted_X = numpy.dot(predicted_U.transpose(),predicted_V)
 
 	# Write predicted_X, U, V to output file
-	fout = open(target,"w")
-	fout.write("%s\t%s\t%s\n" % (I,J,K))
-	write(fout,"X",predicted_X)
-	write(fout,"U",predicted_U)
-	write(fout,"V",predicted_V)
+	store_X_U_V(target,predicted_X,predicted_U,predicted_V)
 
 	return
-
-
-def read_X_U_V(filename):
-	fin = open(filename,"r")
-	(I,J,K) = [int(val) for val in fin.readline().split("\n")[0].split("\t")]
-
-	def read_matrix(f,rows,cols):
-		matrix = numpy.empty([rows,cols])
-		f.readline()
-		for r in range(0,rows):
-			row = f.readline().split("\n")[0].split("\t")
-			for c in range(0,cols):
-				matrix[r][c] = row[c]
-		return matrix
-
-	X = read_matrix(fin,I,J)
-	U = read_matrix(fin,K,I)
-	V = read_matrix(fin,K,J)
-
-	return (I,J,K,X,U,V)
-
 
 if __name__ == "__main__":
 	recover(numpy.ones([100,80]),"generated.txt","recovered.txt",20)
