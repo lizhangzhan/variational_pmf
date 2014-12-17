@@ -33,10 +33,10 @@ def read_data(filename):
 
 if __name__ == "__main__":
 	outputfile = "performances.txt"
-	K_range = range(1,10+1)
-	no_per_K = 5
+	K_range = range(1,20+1)
+	no_per_K = 10
 	fraction_unknown = 0.1
-	iterations = 10
+	iterations = 20
 	updates = 5
 
 	X = read_data("gi50_no_missing.txt")	

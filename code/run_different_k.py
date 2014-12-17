@@ -13,10 +13,12 @@ Each time we randomly initialize M, with <fraction> of the values missing.
 def try_different_k(filename,X,K_range,no_per_K,fraction=0.1,iterations=50,updates=10):
 	(I,J) = X.shape
 	variational_lower_bounds = []
-	RMSEs = []
+	RMSEs_known = []
+	RMSEs_unknown = []
 	for K in K_range:
 		bounds = []
-		errors = []
+		errors_unknown = []
+		errors_known = []
 		for i in range(1,no_per_K+1):
 			print "K=%s, i=%s" % (K,i)
 
@@ -32,28 +34,35 @@ def try_different_k(filename,X,K_range,no_per_K,fraction=0.1,iterations=50,updat
 			V = PMF.V
 
 			actual_vs_predicted = recover_predictions(M,X,predicted_X)
-			RMSE = compute_RMSE(actual_vs_predicted)
-
+			RMSE_unknown = compute_RMSE(actual_vs_predicted)
+			
 			bounds.append(PMF.F_q)
-			errors.append(RMSE)
+			errors_unknown.append(RMSE_unknown)
+			errors_known.append(PMF.RMSE)
 
-		RMSEs.append(errors)
+		RMSEs_unknown.append(errors_unknown)
+		RMSEs_known.append(errors_known)
 		variational_lower_bounds.append(bounds)
 
 	# We then return: the best of each K value, the avr, and all of the values
 	variational_avr = [sum(l)/len(l) for l in variational_lower_bounds]
 	variational_best = [max(l) for l in variational_lower_bounds]
-	RMSEs_avr = [sum(l)/len(l) for l in RMSEs]
-	RMSEs_best = [min(l) for l in RMSEs]
+	RMSEs_unknown_avr = [sum(l)/len(l) for l in RMSEs_unknown]
+	RMSEs_unknown_best = [min(l) for l in RMSEs_unknown]
+	RMSEs_known_avr = [sum(l)/len(l) for l in RMSEs_known]
+	RMSEs_known_best = [min(l) for l in RMSEs_known]
 
 	# We now store this info in the file <filename>
 	fout = open(filename,'w')
 	write_matrix(fout,"Variational - all",variational_lower_bounds)
 	write_list(fout,"Variational - average",variational_avr)
 	write_list(fout,"Variational - best",variational_best)
-	write_matrix(fout,"RMSE - all",RMSEs)
-	write_list(fout,"RMSE - average",RMSEs_avr)
-	write_list(fout,"RMSE - best",RMSEs_best)
+	write_matrix(fout,"RMSE unknown - all",RMSEs_unknown)
+	write_list(fout,"RMSE unknown - average",RMSEs_unknown_avr)
+	write_list(fout,"RMSE unknown - best",RMSEs_unknown_best)
+	write_matrix(fout,"RMSE known - all",RMSEs_known)
+	write_list(fout,"RMSE known - average",RMSEs_known_avr)
+	write_list(fout,"RMSE known - best",RMSEs_known_best)
 	fout.close()
 	
 	return

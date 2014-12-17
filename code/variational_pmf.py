@@ -146,13 +146,12 @@ class VariationalPMF:
 		# See Kim and Choi for these definitions
 		self.RMSE = sum([self.R[i][j]**2 for (i,j) in self.omega]) / float(len(self.omega))
 		F = 0.0
-		for i in range(0,self.I):
-			for j in range(0,self.J):
-				E_ij = self.R[i][j]**2 + sum([
-					self.U[k][i]**2 * self.S_V[k][j] + self.V[k][j]**2 * self.S_U[k][i] + self.S_U[k][i]*self.S_V[k][j]
-					for k in range(0,self.K)])
-				F_ij = -1.0/(2.0*self.tau)*E_ij - (1.0)/(2.0)*math.log(2*math.pi*self.tau) # natural log
-				F += F_ij
+		for (i,j) in self.omega:
+			E_ij = self.R[i][j]**2 + sum([
+				self.U[k][i]**2 * self.S_V[k][j] + self.V[k][j]**2 * self.S_U[k][i] + self.S_U[k][i]*self.S_V[k][j]
+				for k in range(0,self.K)])
+			F_ij = -1.0/(2.0*self.tau)*E_ij - (1.0)/(2.0)*math.log(2*math.pi*self.tau) # natural log
+			F += F_ij
 		for i in range(0,self.I):
 			for k in range(0,self.K):
 				F_U_ki = -1.0/(2.0*self.alpha[k]) * (self.U[k][i]**2 + self.S_U[k][i]) + math.log(self.S_U[k][i]/self.alpha[k])/2.0 + 1.0/2.0
