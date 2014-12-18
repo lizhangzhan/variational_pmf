@@ -21,7 +21,7 @@ if __name__ == "__main__":
 	outputfile = "recovered_matrices.txt"
 
 	PMF = VariationalPMF(X,M,K)
-	PMF.run(iterations=20,updates=1)
+	PMF.run(iterations=1000,updates=1)
 
 	predicted_U = PMF.U
 	predicted_V = PMF.V
