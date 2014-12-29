@@ -87,5 +87,5 @@ def generate_M(I,J,fraction):
 	M = numpy.ones([I,J])
 	values = random.sample(range(0,I*J),int(I*J*fraction))
 	for v in values:
-		M[v / I][v % J] = 0
+		M[v / J][v % J] = 0
 	return M
