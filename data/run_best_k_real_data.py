@@ -35,43 +35,52 @@ if __name__ == "__main__":
 	actual_vs_predicted = recover_predictions(M,X,predicted_X)
 	(actual,predicted) = zip(*actual_vs_predicted)
 
-	plt.figure()
+	RMSE_predictions = compute_RMSE(actual_vs_predicted)
+	RMSE_training = PMF.RMSE
+
+	print "RMSE of predictions: %s" % RMSE_predictions
+	print "RMSE of training data: %s" % RMSE_training
+
+	bins_predictions = plt.figure(1)
+	plt.title('Histogram of values - true values, predictions')
 	plt.xlabel('values - actual vs predicted')
 	plt.ylabel('no.')
 	bins = [v * 0.1 for v in range(0,10*10)]
 	plt.hist(actual,bins,alpha=0.5,label='actual')
 	plt.hist(predicted,bins,alpha=0.5,label='predicted')
-	plt.show()
-
+	
 	# Also do a histogram plot of the differences between the actual and prediction
 	differences = [math.fabs(v1-v2) for (v1,v2) in actual_vs_predicted]
-	plt.figure()
+	bins_differences_unknown = plt.figure(2)
+	plt.title('Histogram of differences between the predictions and actual values')
 	plt.xlabel('difference between actual and predicted')
 	plt.ylabel('no.')
 	bins = [v * 0.1 for v in range(0,10*5)]
 	plt.hist(differences,bins)
-	plt.show()
 
 	differences = [math.fabs(v1-v2) for (v1,v2) in zip(numpy.ndarray.flatten(X),numpy.ndarray.flatten(predicted_X))]
-	plt.figure()
+	bins_differences_all = plt.figure(3)
+	plt.title('Histogram of differences between the predictions and actual values - including training data')
 	plt.xlabel('difference between actual and predicted - all')
 	plt.ylabel('no.')
 	bins = [v * 0.1 for v in range(0,10*5)]
 	plt.hist(differences,bins)
-	plt.show()
 
 	# Plot the predictions - only the "unknown" values (1 entries in M)
-	plt.figure()
+	scatter_predictions = plt.figure(4)
+	plt.title('Scatter plot of predictions vs true values')
 	plt.xlabel('actual')
 	plt.ylabel('predicted')
 	plt.scatter(actual,predicted)
 	plt.plot([-2,10],[-2,10]) #y=x line
-	plt.show()
 
 	# Plot all the values, including the ones that are already known
-	plt.figure()
+	scatter_all = plt.figure(5)
+	plt.title('Scatter plot of predictions vs true values - including training data')
 	plt.xlabel('actual - all')
 	plt.ylabel('predicted - all')
 	plt.scatter(X,predicted_X)
 	plt.plot([-2,10],[-2,10]) #y=x line
+
+	# Show all the plots
 	plt.show()
