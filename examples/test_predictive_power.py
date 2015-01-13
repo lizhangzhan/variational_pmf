@@ -5,7 +5,7 @@ import generate_example, recover_example
 sys.path.append("../../.")
 from variational_pmf.code.load_store_matrices import load_X_U_V, store_X_U_V
 from variational_pmf.code.variational_pmf import VariationalPMF
-from variational_pmf.code.run_different_k import recover_predictions, generate_M
+from variational_pmf.code.helpers import recover_predictions, generate_M, calc_inverse_M
 
 
 """
@@ -21,12 +21,13 @@ if __name__ == "__main__":
 	K = 2
 
 	M = generate_M(I,J,0.1)
+	M_inv = calc_inverse_M(M)
 
 	generated = "generated.txt"
 	recovered = "recovered.txt"
 
 	generate_example.generate_X(I,J,K,generated)
-	recover_example.recover(M,generated,recovered,20)
+	recover_example.recover(M,generated,recovered,20,True,M_inv)
 
 	(_,_,_,original_X,original_U,original_V) = load_X_U_V(generated)
 	(_,_,_,predicted_X,predicted_U,predicted_V) = load_X_U_V(recovered)

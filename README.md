@@ -23,4 +23,3 @@ Our class constructor requires three arguments:
 - X, as a 2D NumPy array
 - M, as a 2D NumPy array
 - K, integer
-- no_threads, the number of threads that should be spawned to parallelize the for loops

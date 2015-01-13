@@ -9,13 +9,15 @@ import numpy
 Uses the Variational PMF method to recover the original matrices U, V from the observed
 X in <source> with known values specified by 1's in M, and stores these together with the 
 predicted X=U^T*V in <target>.
+If <calc_predictions> is True, we also calculate the performance of the predictions, testing
+for all values in X where the matrix <M_inv> = 1.
 """
 
-def recover(M,source,target,iterations):
+def recover(M,source,target,iterations,calc_predictions=False,M_inv=[]):
 	(I,J,K,X,U,V) = load_X_U_V(source)
 
 	PMF = VariationalPMF(X,M,K)
-	PMF.run(iterations,updates=10)
+	PMF.run(iterations=iterations,updates=10,calc_predictions=calc_predictions,M_inv=M_inv)
 
 	predicted_U = PMF.U
 	predicted_V = PMF.V

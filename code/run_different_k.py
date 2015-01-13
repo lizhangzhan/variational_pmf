@@ -1,6 +1,7 @@
 from variational_pmf import VariationalPMF
 from load_store_matrices import load_X_U_V, store_X_U_V, write_matrix, write_list
-import numpy, random
+from helpers import generate_M, calc_inverse_M
+import numpy, random, math
 
 """
 Methods for running the Variational PMF algorithm <no_per_k> times for each of
@@ -12,80 +13,66 @@ Each time we randomly initialize M, with <fraction> of the values missing.
 
 def try_different_k(filename,X,K_range,no_per_K,fraction=0.1,iterations=50,updates=10):
 	(I,J) = X.shape
-	variational_lower_bounds = []
-	RMSEs_known = []
-	RMSEs_unknown = []
+	variational_all = []
+	RMSE_all = []
+	NRMSE_all = []
 	for K in K_range:
-		bounds = []
-		errors_unknown = []
-		errors_known = []
+		variational_lower_bounds = []
+		RMSEs_predict = []
+		NRMSEs_predict = []
 		for i in range(1,no_per_K+1):
 			print "K=%s, i=%s" % (K,i)
 
 			# Generate M
 			M = generate_M(I,J,fraction)
+			M_inv = calc_inverse_M(M)
 
 			# Recover the matrices U,V
 			PMF = VariationalPMF(X,M,K)
-			PMF.run(iterations,updates)
+			PMF.run(iterations,updates,True,M_inv)
 
 			predicted_X = PMF.predicted_X
 			U = PMF.U
 			V = PMF.V
 
-			actual_vs_predicted = recover_predictions(M,X,predicted_X)
-			RMSE_unknown = compute_RMSE(actual_vs_predicted)
+			# Retrieve the variational lower bound and (N)RMSE from this run, and store it
+			RMSE_predict = PMF.RMSE_predict
+			NRMSE_predict = PMF.NRMSE_predict
 			
-			bounds.append(PMF.F_q)
-			errors_unknown.append(RMSE_unknown)
-			errors_known.append(PMF.RMSE)
+			variational_lower_bounds.append(PMF.F_q)
+			RMSEs_predict.append(RMSE_predict)
+			NRMSEs_predict.append(NRMSE_predict)
 
-		RMSEs_unknown.append(errors_unknown)
-		RMSEs_known.append(errors_known)
-		variational_lower_bounds.append(bounds)
+		# Add the variational lower bounds and (N)RMSE values for this value of K to the lists
+		variational_all.append(variational_lower_bounds)
+		RMSE_all.append(RMSEs_predict)
+		NRMSE_all.append(NRMSEs_predict)
 
 	# We then return: the best of each K value, the avr, and all of the values
-	variational_avr = [sum(l)/len(l) for l in variational_lower_bounds]
-	variational_best = [max(l) for l in variational_lower_bounds]
-	RMSEs_unknown_avr = [sum(l)/len(l) for l in RMSEs_unknown]
-	RMSEs_unknown_best = [min(l) for l in RMSEs_unknown]
-	RMSEs_known_avr = [sum(l)/len(l) for l in RMSEs_known]
-	RMSEs_known_best = [min(l) for l in RMSEs_known]
+	def averages(matrix):
+		return [sum(l)/len(l) for l in matrix]
+	def bests(matrix):
+		return [max(l) for l in matrix]
+
+	variational_avr = averages(variational_all)
+	variational_best = bests(variational_all)
+	RMSE_avr = averages(RMSE_all)
+	RMSE_best = bests(RMSE_all)
+	NRMSE_avr = averages(NRMSE_all)
+	NRMSE_best = bests(NRMSE_all)
 
 	# We now store this info in the file <filename>
 	fout = open(filename,'w')
-	write_matrix(fout,"Variational - all",variational_lower_bounds)
-	write_list(fout,"Variational - average",variational_avr)
-	write_list(fout,"Variational - best",variational_best)
-	write_matrix(fout,"RMSE unknown - all",RMSEs_unknown)
-	write_list(fout,"RMSE unknown - average",RMSEs_unknown_avr)
-	write_list(fout,"RMSE unknown - best",RMSEs_unknown_best)
-	write_matrix(fout,"RMSE known - all",RMSEs_known)
-	write_list(fout,"RMSE known - average",RMSEs_known_avr)
-	write_list(fout,"RMSE known - best",RMSEs_known_best)
+
+	def print_performances(name,all_values,avr,best):
+		write_matrix(fout,"%s - all" % name,all_values)
+		write_list(fout,"%s - average" % name,avr)
+		write_list(fout,"%s - best" % name,best)
+
+	print_performances("Variational",variational_all,variational_avr,variational_best)
+	print_performances("RMSE predictions",RMSE_all,RMSE_avr,RMSE_best)
+	print_performances("NRMSE predictions",NRMSE_all,NRMSE_avr,NRMSE_best)
+
 	fout.close()
 	
 	return
-
-
-def compute_RMSE(actual_vs_predicted):
-	RMSE = sum([(y_t-y_p)**2 for (y_t,y_p) in actual_vs_predicted])/len(actual_vs_predicted)
-	return RMSE
-
-
-def recover_predictions(M,X_true,X_pred):
-	(I,J) = M.shape
-	actual_vs_predicted = []
-	for i in range(0,I):
-		for j in range(0,J):
-			if M[i][j] == 0:
-				actual_vs_predicted.append((X_true[i][j],X_pred[i][j]))
-	return (actual_vs_predicted)
-
-
-def generate_M(I,J,fraction):
-	M = numpy.ones([I,J])
-	values = random.sample(range(0,I*J),int(I*J*fraction))
-	for v in values:
-		M[v / J][v % J] = 0
-	return M

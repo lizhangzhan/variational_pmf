@@ -1,10 +1,27 @@
 from variational_pmf.code.variational_pmf import VariationalPMF
 import numpy
 
-def test_variational_pmf():
+
+def test_compute_omega():
+	X = numpy.array([[1,2],[3,4],[5,6]])
+	M = numpy.array([[0,1],[1,0],[1,1]])
+	K = 2
+
+	PMF = VariationalPMF(X,M,K)
+	PMF.compute_omega()
+
+	expected_omega = [(0,1),(1,0),(2,0),(2,1)]
+	expected_omega_I = [[1],[0],[0,1]]
+	expected_omega_J = [[1,2],[0,2]]
+
+	assert numpy.array_equal(PMF.omega,expected_omega)
+	assert numpy.array_equal(PMF.omega_I,expected_omega_I)
+	assert PMF.omega_J[0] == expected_omega_J[0] and PMF.omega_J[1] == expected_omega_J[1]
+
+
+def test_updates():
 	# We create a simple test case by overwriting the random initialization,
-	# and then test each of the updates. We use the py.test library - run
-	# using "py.test" on the command line.
+	# and then test each of the updates.
 	X = numpy.array([[-1,2],[3,4]])
 	M = numpy.array([[0,1],[1,1]])
 	K = 2

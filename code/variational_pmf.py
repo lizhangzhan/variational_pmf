@@ -1,5 +1,6 @@
 import numpy, random, math
 from scipy.stats import invgamma
+from variational_pmf_helpers import calc_F_q, calc_RMSE, calc_NRMSE, calc_performance
 
 """
 This file contains the implementation of the variational approach to the
@@ -19,13 +20,22 @@ class VariationalPMF:
 		self.alpha = numpy.empty([K])
 		self.beta = numpy.empty([K])
 		self.tau = 0
-		self.RMSE = 0
 		self.F_q = 0
+		self.RMSE_train = 0
+		self.NRMSE_train = 0
+		self.X_max = None
+		self.X_min = None
+		self.RMSE_predictions = 0
+		self.NRMSE_predictions = 0
 
 		return
 
 
-	def run(self,iterations,updates=10):
+	# Run the variational inference updates <iterations> times, providing an update of F_q,
+	# (N)RMSE_train (RMSE of training data), and (N)RMSE_predict (RMSE of test data) if 
+	# <calc_predictions> is True (in which case <M_inv> is a matrix storing which values are
+	# to be predicted - M_ij = 1 if so)
+	def run(self,iterations,updates=10,calc_predictions=False,M_inv=[]):
 		# Initialize a (K,I) matrix U, S_U, (K,J) matrix V, S_V, (I,J) matrix R
 		self.initialize()
 
@@ -37,23 +47,23 @@ class VariationalPMF:
 		# Initialize the hyperparameters alpha_k, beta_k, tau
 		self.update_hyperparameters()
 
-		self.calc_statistics()
-		print "Iteration 0, RMSE: %s, F_q: %s" % (self.RMSE,self.F_q)
-
+		self.calc_statistics(0,calc_predictions,M_inv)
+		
 		# Then repeatedly: update U, update V, update hyperparams
+		i = 0
 		for i in range(1,iterations+1):
 			self.update_U()
 			self.update_V()
 			self.update_hyperparameters()
 
 			if (updates > 0 and i % updates == 0):
-				self.calc_statistics()
-				print "Iteration %s, RMSE: %s, F_q: %s" % (i,self.RMSE,self.F_q)
+				self.calc_statistics(i,calc_predictions,M_inv)
 
-		# Calculate the RMSE and variational lower bound F(q)
-		self.calc_statistics()
+		# Calculate the RMSE and variational lower bound F(q), if we haven't done so already
+		if (updates == 0 or i % updates != 0):
+			self.calc_statistics(i,calc_predictions,M_inv)
 
-		# Compute the predicttion matrix X = U^T * V
+		# Compute the prediction matrix X = U^T * V
 		self.predicted_X = numpy.dot(self.U.transpose(),self.V)
 
 		return
@@ -142,23 +152,26 @@ class VariationalPMF:
 		return
 
 
-	def calc_statistics(self):
-		# See Kim and Choi for these definitions
-		self.RMSE = sum([self.R[i][j]**2 for (i,j) in self.omega]) / float(len(self.omega))
-		F = 0.0
-		for (i,j) in self.omega:
-			E_ij = self.R[i][j]**2 + sum([
-				self.U[k][i]**2 * self.S_V[k][j] + self.V[k][j]**2 * self.S_U[k][i] + self.S_U[k][i]*self.S_V[k][j]
-				for k in range(0,self.K)])
-			F_ij = -1.0/(2.0*self.tau)*E_ij - (1.0)/(2.0)*math.log(2*math.pi*self.tau) # natural log
-			F += F_ij
-		for i in range(0,self.I):
-			for k in range(0,self.K):
-				F_U_ki = -1.0/(2.0*self.alpha[k]) * (self.U[k][i]**2 + self.S_U[k][i]) + math.log(self.S_U[k][i]/self.alpha[k])/2.0 + 1.0/2.0
-				F += F_U_ki
-		for j in range(0,self.J):
-			for k in range(0,self.K):
-				F_V_kj = -1.0/(2.0*self.beta[k]) * (self.V[k][j]**2 + self.S_V[k][j]) + math.log(self.S_V[k][j]/self.beta[k])/2.0 + 1.0/2.0
-				F += F_V_kj
-		self.F_q = F
+	# This function calculates both the variational lower bound, F_q, and the RMSE/NRMSE for
+	# the training data values. If <calc_predictions> is true, it will also calculate the
+	# performance of the predictions. All these values are printed to the command line.
+	def calc_statistics(self,iteration,calc_predictions,M_inv):
+		if self.X_min is None:
+			self.X_min = min([self.X[i][j] for (i,j) in self.omega])
+		if self.X_max is None:
+			self.X_max = max([self.X[i][j] for (i,j) in self.omega])
+
+		self.RMSE_train = calc_RMSE(self.R,self.omega)
+		self.NRMSE_train = calc_NRMSE(self.RMSE_train,self.X_min,self.X_max)
+
+		self.F_q = calc_F_q(self.U,self.V,self.S_U,self.S_V,self.R,self.omega,self.tau,self.alpha,self.beta,self.I,self.J,self.K)
+
+		print "Iteration %s, RMSE training: %s, NRMSE training: %s, F_q: %s" % (iteration,self.RMSE_train,self.NRMSE_train,self.F_q)
+		
+		# Calculate the performance ((N)RMSE) on the test data
+		if calc_predictions:
+			predicted_X = numpy.dot(self.U.transpose(),self.V)
+			(self.RMSE_predict,self.NRMSE_predict) = calc_performance(predicted_X,self.X,self.I,self.J,M_inv,self.X_min,self.X_max)
+			print "RMSE predictions: %s, NRMSE predictions: %s" % (self.RMSE_predict,self.NRMSE_predict)
+
 		return
