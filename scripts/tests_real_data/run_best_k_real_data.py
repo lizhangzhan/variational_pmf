@@ -1,28 +1,36 @@
 import sys, numpy, math
 import matplotlib.pyplot as plt
-sys.path.append("../../.")
+sys.path.append("../../../.")
 from variational_pmf.code.variational_pmf import VariationalPMF
 from variational_pmf.code.load_store_matrices import store_X_U_V
-from variational_pmf.code.run_different_k import recover_predictions, generate_M, compute_RMSE
-from run_real_data import read_data
+from variational_pmf.code.helpers import recover_predictions, generate_M, calc_inverse_M
+from run_different_k_real_data import read_data
 
 """
 Run the Variational PMF algorithm for the best value of K found by running
-run_real_data.py, and store the matrices U, V, and the predictions X in a file.
+<run_different_k_real_data.py>, and store the matrices U, V, and the predictions X in a file.
 """
 
 
+def compute_RMSE(actual_vs_predicted):
+	RMSE = sum([(y_t-y_p)**2 for (y_t,y_p) in actual_vs_predicted])/len(actual_vs_predicted)
+	return RMSE
+
+
 if __name__ == "__main__":
-	X = read_data("gi50_no_missing.txt")
+	X = read_data("./../../data/gi50_no_missing.txt")
 	(I,J) = X.shape
 	fraction_unknown = 0.1
+
 	M = generate_M(I,J,fraction_unknown)
+	M_inv = calc_inverse_M(M)
 	K = 3
+
 	outputfile = "recovered_matrices.txt"
 	iterations = 10
 
 	PMF = VariationalPMF(X,M,K)
-	PMF.run(iterations=iterations,updates=1)
+	PMF.run(iterations=iterations,updates=1,calc_predictions=True,M_inv=M_inv)
 
 	predicted_U = PMF.U
 	predicted_V = PMF.V

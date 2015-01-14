@@ -1,5 +1,5 @@
 import sys, numpy
-sys.path.append("../../.")
+sys.path.append("../../../.")
 from variational_pmf.code.run_different_k import try_different_k
 from variational_pmf.code.load_store_matrices import read_matrix
 
@@ -30,7 +30,6 @@ def read_data(filename):
 	return X
 
 
-
 if __name__ == "__main__":
 	outputfile = "performances.txt"
 	K_range = range(1,10+1)
@@ -39,7 +38,7 @@ if __name__ == "__main__":
 	iterations = 30
 	updates = 5
 
-	X = read_data("gi50_no_missing.txt")	
+	X = read_data("./../../data/gi50_no_missing.txt")	
 
 	try_different_k(filename=outputfile,X=X,K_range=K_range,no_per_K=no_per_K,
 					fraction=fraction_unknown,iterations=iterations,updates=updates)

@@ -1,7 +1,7 @@
 import sys
 
 import generate_example, recover_example
-sys.path.append("../../.")
+sys.path.append("../../../.")
 from variational_pmf.code.run_different_k import try_different_k
 from variational_pmf.code.load_store_matrices import load_X_U_V
 

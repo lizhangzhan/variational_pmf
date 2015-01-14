@@ -1,5 +1,5 @@
 import sys
-sys.path.append("../../.")
+sys.path.append("../../../.")
 from variational_pmf.code.load_store_matrices import store_X_U_V
 
 import numpy, random, math

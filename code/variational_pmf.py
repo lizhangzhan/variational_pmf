@@ -117,8 +117,8 @@ class VariationalPMF:
 		for i in range(0,self.I):
 			for k in range(0,self.K):
 				old_U_ki = self.U[k][i]
-				self.S_U[k][i] = 1.0 / ((1.0/self.alpha[k]) + (1.0/self.tau) * sum([(self.V[k][j]**2+self.S_V[k][j]) for j in self.omega_I[i]]))
-				self.U[k][i] = self.S_U[k][i] * ((1.0/self.tau) * sum([(self.R[i][j]+self.U[k][i]*self.V[k][j])*self.V[k][j] for j in self.omega_I[i]]))
+				self.S_U[k][i] = 1.0 / (self.alpha[k] + self.tau * sum([(self.V[k][j]**2+self.S_V[k][j]) for j in self.omega_I[i]]))
+				self.U[k][i] = self.S_U[k][i] * (self.tau * sum([(self.R[i][j]+self.U[k][i]*self.V[k][j])*self.V[k][j] for j in self.omega_I[i]]))
 				for j in self.omega_I[i]:
 					self.R[i][j] = self.R[i][j] - (self.U[k][i]-old_U_ki) * self.V[k][j]
 			
@@ -129,8 +129,8 @@ class VariationalPMF:
 		for j in range(0,self.J):
 			for k in range(0,self.K):
 				old_V_kj = self.V[k][j]
-				self.S_V[k][j] = 1.0 / ((1.0/self.beta[k]) + (1.0/self.tau) * sum([(self.U[k][i]**2+self.S_U[k][i]) for i in self.omega_J[j]]))
-				self.V[k][j] = self.S_V[k][j] * ((1.0/self.tau) * sum([(self.R[i][j]+self.V[k][j]*self.U[k][i])*self.U[k][i] for i in self.omega_J[j]]))
+				self.S_V[k][j] = 1.0 / (self.beta[k] + self.tau * sum([(self.U[k][i]**2+self.S_U[k][i]) for i in self.omega_J[j]]))
+				self.V[k][j] = self.S_V[k][j] * (self.tau * sum([(self.R[i][j]+self.V[k][j]*self.U[k][i])*self.U[k][i] for i in self.omega_J[j]]))
 				for i in self.omega_J[j]:
 					self.R[i][j] = self.R[i][j] - (self.V[k][j]-old_V_kj) * self.U[k][i]
 	
@@ -139,15 +139,15 @@ class VariationalPMF:
 
 	def update_hyperparameters(self):
 		for k in range(0,self.K):
-			self.alpha[k] = sum([(self.U[k][i])**2 + self.S_U[k][i] for i in range(0,self.I)]) / float(self.I)
-			self.beta[k] = sum([(self.V[k][j])**2 + self.S_V[k][j] for j in range(0,self.J)]) / float(self.J)
+			self.alpha[k] = float(self.I) / sum([(self.U[k][i])**2 + self.S_U[k][i] for i in range(0,self.I)])
+			self.beta[k] = float(self.J) / sum([(self.V[k][j])**2 + self.S_V[k][j] for j in range(0,self.J)])
 
 		# Compute E_ij, then sum to give E
 		E = 0.0
 		for (i,j) in self.omega:
 			E_ij = self.R[i][j]**2 + sum([((self.U[k][i]**2)*self.S_V[k][j] + (self.V[k][j]**2)*self.S_U[k][i] + self.S_U[k][i]*self.S_V[k][j]) for k in range(0,self.K)])
 			E += E_ij
-		self.tau = E / float(len(self.omega))
+		self.tau = float(len(self.omega)) / E
 
 		return
 

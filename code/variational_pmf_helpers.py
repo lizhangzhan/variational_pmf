@@ -12,15 +12,15 @@ def calc_F_q(U,V,S_U,S_V,R,omega,tau,alpha,beta,I,J,K):
 		E_ij = R[i][j]**2 + sum([
 			U[k][i]**2 * S_V[k][j] + V[k][j]**2 * S_U[k][i] + S_U[k][i]*S_V[k][j]
 			for k in range(0,K)])
-		F_ij = -1.0/(2.0*tau)*E_ij - (1.0)/(2.0)*math.log(2*math.pi*tau) # natural log
+		F_ij = -tau/2.0*E_ij - (1.0)/(2.0)*math.log(2*math.pi/tau) # natural log
 		F += F_ij
 	for i in range(0,I):
 		for k in range(0,K):
-			F_U_ki = -1.0/(2.0*alpha[k]) * (U[k][i]**2 + S_U[k][i]) + math.log(S_U[k][i]/alpha[k])/2.0 + 1.0/2.0
+			F_U_ki = -alpha[k]/2.0 * (U[k][i]**2 + S_U[k][i]) + math.log(S_U[k][i]*alpha[k])/2.0 + 1.0/2.0
 			F += F_U_ki
 	for j in range(0,J):
 		for k in range(0,K):
-			F_V_kj = -1.0/(2.0*beta[k]) * (V[k][j]**2 + S_V[k][j]) + math.log(S_V[k][j]/beta[k])/2.0 + 1.0/2.0
+			F_V_kj = -beta[k]/2.0 * (V[k][j]**2 + S_V[k][j]) + math.log(S_V[k][j]*beta[k])/2.0 + 1.0/2.0
 			F += F_V_kj
 	return F
 

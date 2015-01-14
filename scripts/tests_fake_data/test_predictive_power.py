@@ -2,7 +2,7 @@ import sys, random, numpy
 import matplotlib.pyplot as plt
 
 import generate_example, recover_example
-sys.path.append("../../.")
+sys.path.append("../../../.")
 from variational_pmf.code.load_store_matrices import load_X_U_V, store_X_U_V
 from variational_pmf.code.variational_pmf import VariationalPMF
 from variational_pmf.code.helpers import recover_predictions, generate_M, calc_inverse_M
