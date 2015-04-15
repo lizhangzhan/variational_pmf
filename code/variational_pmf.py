@@ -15,20 +15,11 @@ class VariationalPMF:
 		self.X = X
 		self.M = M
 		self.K = K
-		self.I = X.shape[0]
-		self.J = X.shape[1]
+		(self.I,self.J) = X.shape
 		self.alpha = numpy.empty([K])
 		self.beta = numpy.empty([K])
-		self.tau = 0
-		self.F_q = 0
-		self.RMSE_train = 0
-		self.NRMSE_train = 0
 		self.X_max = None
 		self.X_min = None
-		self.RMSE_predictions = 0
-		self.NRMSE_predictions = 0
-
-		return
 
 
 	# Run the variational inference updates <iterations> times, providing an update of F_q,
@@ -36,17 +27,12 @@ class VariationalPMF:
 	# <calc_predictions> is True (in which case <M_inv> is a matrix storing which values are
 	# to be predicted - M_ij = 1 if so)
 	def run(self,iterations,updates=10,calc_predictions=False,M_inv=[]):
-		# Initialize a (K,I) matrix U, S_U, (K,J) matrix V, S_V, (I,J) matrix R
+		# Initialize U, S_U, V, S_V, R
 		self.initialize()
-
-		# self.omega_U will store an array of tuples Mi, containing the indices
-		# j for which Mij is 1. Similarly for self.omega_V, Mj, indices i; and
-		# self.omega, indices (i,j)
 		self.compute_omega()
 
 		# Initialize the hyperparameters alpha_k, beta_k, tau
 		self.update_hyperparameters()
-
 		self.calc_statistics(0,calc_predictions,M_inv)
 		
 		# Then repeatedly: update U, update V, update hyperparams
@@ -63,10 +49,7 @@ class VariationalPMF:
 		if (updates == 0 or i % updates != 0):
 			self.calc_statistics(i,calc_predictions,M_inv)
 
-		# Compute the prediction matrix X = U^T * V
 		self.predicted_X = numpy.dot(self.U.transpose(),self.V)
-
-		return
 
 
 	def initialize(self):
